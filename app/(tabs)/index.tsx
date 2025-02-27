@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, ScrollView, Pressable } from 'react-native';
 import { Link } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,6 +8,8 @@ import { BalanceCard } from '@/app/components/index/BalanceCard/BalanceCard';
 import { SummaryGrid } from '@/app/components/index/SummaryGrid/SummaryGrid';
 import { QuickActions } from '@/app/components/index/QuickActions/QuickActions';
 import { TransactionList } from '@/app/components/index/TransactionList/TransactionList';
+import { DashboardAnalytics } from '@/app/components/budget/DashboardAnalytics';
+import { useBudgetStore } from '@/store/useBudgetStore';
 
 // Dummy data (will be replaced with API calls)
 const dashboardData = {
@@ -45,6 +47,14 @@ const dashboardData = {
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const [showBalance, setShowBalance] = useState(true);
+  
+  // Get budget data from store
+  const { expenseItems, savingsGoals, fetchBudgetData } = useBudgetStore();
+  
+  // Fetch budget data on component mount
+  useEffect(() => {
+    fetchBudgetData();
+  }, [fetchBudgetData]);
 
   return (
     <ThemedView style={styles.container}>
@@ -74,6 +84,25 @@ export default function DashboardScreen() {
 
         {/* Quick Actions */}
         <QuickActions />
+        
+        {/* Analytics Overview */}
+        <View style={styles.analyticsSection}>
+          <View style={styles.sectionHeader}>
+            <ThemedText style={styles.sectionTitle}>Spending Insights</ThemedText>
+            <Link href="/(tabs)/budget" asChild>
+              <Pressable>
+                <ThemedText style={styles.seeAllButton}>See Details</ThemedText>
+              </Pressable>
+            </Link>
+          </View>
+          <View style={styles.analyticsCard}>
+            <DashboardAnalytics 
+              expenseItems={expenseItems} 
+              savingsGoals={savingsGoals}
+              compact={true} 
+            />
+          </View>
+        </View>
 
         {/* Recent Transactions */}
         <View style={styles.transactionsSection}>
@@ -102,6 +131,16 @@ const styles = StyleSheet.create({
   },
   summarySection: {
     marginBottom: 24,
+  },
+  analyticsSection: {
+    marginBottom: 24,
+  },
+  analyticsCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   transactionsSection: {
     flex: 1,
