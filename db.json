@@ -1,0 +1,33 @@
+{
+  "financial-data": {
+    "totalBalance": 5000.00,
+    "monthlyIncome": 3000.00,
+    "monthlyExpenses": 2000.00,
+    "recentTransactions": [
+      {
+        "id": "t1",
+        "date": "2024-01-20",
+        "amount": 50.00,
+        "category": "Food",
+        "description": "Grocery shopping",
+        "type": "expense"
+      },
+      {
+        "id": "t2",
+        "date": "2024-01-19",
+        "amount": 3000.00,
+        "category": "Salary",
+        "description": "Monthly salary",
+        "type": "income"
+      },
+      {
+        "id": "t3",
+        "date": "2024-01-18",
+        "amount": 100.00,
+        "category": "Transportation",
+        "description": "Fuel",
+        "type": "expense"
+      }
+    ]
+  }
+}
