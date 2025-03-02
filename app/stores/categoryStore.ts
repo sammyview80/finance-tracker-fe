@@ -29,3 +29,5 @@ export const useCategoryStore = create<CategoryStore>((set) => ({
     }, 500);
   },
 }));
+
+export default useCategoryStore;

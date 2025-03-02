@@ -4,7 +4,7 @@ import { DrawerActions, useNavigation } from '@react-navigation/native';
 import { FontAwesome } from '@expo/vector-icons';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBudgetStore } from '@/store/useBudgetStore';
 import { TabSelector } from '@/app/components/budget/TabSelector';
@@ -12,10 +12,12 @@ import { BudgetTable } from '@/app/components/budget/BudgetTable';
 import { SavingsGoalsView } from '@/app/components/budget/SavingsGoalsView';
 import { BudgetAnalytics } from '@/app/components/budget/BudgetAnalytics';
 import { TransactionModal } from '@/app/components/index/TransactionList/TransactionModal';
+import logger from '@/utils/logger';
 
 export default function BudgetScreen() {
   const navigation = useNavigation();
-  const colorScheme = useColorScheme();
+  const { currentTheme } = useTheme();
+  const isDark = currentTheme === 'dark';
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState('expenses');
   const [showIncomeModal, setShowIncomeModal] = useState(false);
@@ -49,7 +51,7 @@ export default function BudgetScreen() {
   // Handle adding a new goal (placeholder for now)
   const handleAddGoal = () => {
     // Implementation will be added later
-    console.log('Add new goal functionality to be implemented');
+    logger.log('Add new goal functionality to be implemented');
   };
 
   return (

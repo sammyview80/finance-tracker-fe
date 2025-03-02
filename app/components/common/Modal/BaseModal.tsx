@@ -1,6 +1,8 @@
 import React, { useRef } from 'react';
 import { Modal, Pressable, View, Animated, PanResponder, ModalProps } from 'react-native';
-import { baseModalStyles as styles } from './styles';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { createModalStyles } from './styles';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface BaseModalProps extends Omit<ModalProps, 'visible' | 'onRequestClose'> {
   visible: boolean;
@@ -18,6 +20,10 @@ export const BaseModal: React.FC<BaseModalProps> = ({
   modalStyle = {},
   ...rest
 }) => {
+  const { currentTheme } = useTheme();
+  const isDark = currentTheme === 'dark';
+  const styles = createModalStyles(isDark);
+  
   const pan = useRef(new Animated.ValueXY()).current;
   const panResponder = useRef(
     PanResponder.create({
@@ -46,21 +52,33 @@ export const BaseModal: React.FC<BaseModalProps> = ({
       animationType={animationType}
       transparent
       onRequestClose={onClose}
+      statusBarTranslucent={true}
       {...rest}
     >
-      <Pressable style={styles.container} onPress={onClose}>
-        <Animated.View 
-          style={[
-            styles.modal, 
-            { transform: [{ translateY: pan.y }] },
-            modalStyle
-          ]} 
-          {...panResponder.panHandlers}
+      <View style={styles.overlay}>
+        <Pressable 
+          style={styles.container} 
+          onPress={onClose}
         >
-          <View style={styles.dragHandle} />
-          {children}
-        </Animated.View>
-      </Pressable>
+          <SafeAreaView edges={['bottom']} style={{ width: '100%' }}>
+            <Animated.View 
+              style={[
+                styles.modal, 
+                { transform: [{ translateY: pan.y }] },
+                modalStyle
+              ]} 
+              {...panResponder.panHandlers}
+            >
+              <Pressable onPress={(e) => e.stopPropagation()}>
+                <View style={styles.dragHandle} />
+                {children}
+              </Pressable>
+            </Animated.View>
+          </SafeAreaView>
+        </Pressable>
+      </View>
     </Modal>
   );
 };
+
+export default BaseModal;

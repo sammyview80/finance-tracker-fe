@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Modal, Pressable, ScrollView, TouchableOpacity } from 'react-native';
-import { FilterButton } from './filters/FilterButton';
 import { TypeSelector } from './filters/TypeSelector';
 import { SortSelector } from './filters/SortSelector';
 import { DateRangeSelector } from './filters/DateRangeSelector';
@@ -14,28 +13,24 @@ interface TransactionFilterProps {
     filterOptions: FilterOptions;
     onFilterChange: (newFilters: FilterOptions) => void;
     onApply: () => void;
+    visible: boolean;
+    onClose: () => void;
 }
 
 export const TransactionFilter: React.FC<TransactionFilterProps> = ({
     filterOptions,
     onFilterChange,
     onApply,
+    visible,
+    onClose
 }) => {
-    const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
     const [showFromDatePicker, setShowFromDatePicker] = useState(false);
     const [showToDatePicker, setShowToDatePicker] = useState(false);
     const [tempFilters, setTempFilters] = useState<FilterOptions>(filterOptions);
-    const [activeFiltersCount, setActiveFiltersCount] = useState<number>(0);
-
-    // Count active filters whenever tempFilters changes
+    
+    // Update tempFilters when filterOptions change
     useEffect(() => {
-        let count = 0;
-        if (filterOptions.type && filterOptions.type !== 'all') count++;
-        if (filterOptions.fromDate) count++;
-        if (filterOptions.toDate) count++;
-        if (filterOptions.minAmount && filterOptions.minAmount.trim() !== '') count++;
-        if (filterOptions.maxAmount && filterOptions.maxAmount.trim() !== '') count++;
-        setActiveFiltersCount(count);
+        setTempFilters(filterOptions);
     }, [filterOptions]);
 
     // Clear filters
@@ -55,7 +50,7 @@ export const TransactionFilter: React.FC<TransactionFilterProps> = ({
     // Apply filters and close modal
     const handleApplyFilters = () => {
         onFilterChange(tempFilters);
-        setIsFilterModalVisible(false);
+        onClose();
         onApply();
     };
 
@@ -75,63 +70,57 @@ export const TransactionFilter: React.FC<TransactionFilterProps> = ({
     };
 
     return (
-        <View>
-            <FilterButton
-                activeFiltersCount={activeFiltersCount}
-                onPress={() => setIsFilterModalVisible(true)}
-            />
-            <BaseModal visible={isFilterModalVisible} onClose={() => setIsFilterModalVisible(false)}>
-                <View style={styles.modalHeader}>
-                    <ThemedText style={styles.modalTitle}>Filter Transactions</ThemedText>
-                    <TouchableOpacity onPress={() => setIsFilterModalVisible(false)} style={styles.closeButton}>
-                        <FontAwesome name="times" size={22} color="#FFFFFF" />
-                    </TouchableOpacity>
-                </View>
+        <BaseModal visible={visible} onClose={onClose}>
+            <View style={styles.modalHeader}>
+                <ThemedText style={styles.modalTitle}>Filter Transactions</ThemedText>
+                <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                    <FontAwesome name="times" size={22} color="#FFFFFF" />
+                </TouchableOpacity>
+            </View>
 
-                <ScrollView style={styles.filterContent}>
-                    <TypeSelector
-                        selectedType={tempFilters.type || 'all'}
-                        onTypeChange={(type) => setTempFilters({ ...tempFilters, type })}
-                    />
+            <ScrollView style={styles.filterContent}>
+                <TypeSelector
+                    selectedType={tempFilters.type || 'all'}
+                    onTypeChange={(type) => setTempFilters({ ...tempFilters, type })}
+                />
 
-                    <SortSelector
-                        sortBy={tempFilters.sortBy || 'date'}
-                        sortOrder={tempFilters.sortOrder || 'desc'}
-                        onSortByChange={(sortBy) => setTempFilters({ ...tempFilters, sortBy })}
-                        onSortOrderChange={(sortOrder) => setTempFilters({ ...tempFilters, sortOrder })}
-                    />
+                <SortSelector
+                    sortBy={tempFilters.sortBy || 'date'}
+                    sortOrder={tempFilters.sortOrder || 'desc'}
+                    onSortByChange={(sortBy) => setTempFilters({ ...tempFilters, sortBy })}
+                    onSortOrderChange={(sortOrder) => setTempFilters({ ...tempFilters, sortOrder })}
+                />
 
-                    <DateRangeSelector
-                        fromDate={tempFilters.fromDate || null}
-                        toDate={tempFilters.toDate || null}
-                        showFromDatePicker={showFromDatePicker}
-                        showToDatePicker={showToDatePicker}
-                        setShowFromDatePicker={setShowFromDatePicker}
-                        setShowToDatePicker={setShowToDatePicker}
-                        handleFromDateChange={handleFromDateChange}
-                        handleToDateChange={handleToDateChange}
-                    />
+                <DateRangeSelector
+                    fromDate={tempFilters.fromDate}
+                    toDate={tempFilters.toDate}
+                    onFromDatePress={() => setShowFromDatePicker(true)}
+                    onToDatePress={() => setShowToDatePicker(true)}
+                    showFromDatePicker={showFromDatePicker}
+                    showToDatePicker={showToDatePicker}
+                    onFromDateChange={handleFromDateChange}
+                    onToDateChange={handleToDateChange}
+                    onClearFromDate={() => setTempFilters({ ...tempFilters, fromDate: null })}
+                    onClearToDate={() => setTempFilters({ ...tempFilters, toDate: null })}
+                />
 
-                    <AmountRangeSelector
-                        minAmount={tempFilters.minAmount || ''}
-                        maxAmount={tempFilters.maxAmount || ''}
-                        onMinAmountChange={(value) => setTempFilters({ ...tempFilters, minAmount: value })}
-                        onMaxAmountChange={(value) => setTempFilters({ ...tempFilters, maxAmount: value })}
-                    />
-                </ScrollView>
+                <AmountRangeSelector
+                    minAmount={tempFilters.minAmount || ''}
+                    maxAmount={tempFilters.maxAmount || ''}
+                    onMinAmountChange={(minAmount) => setTempFilters({ ...tempFilters, minAmount })}
+                    onMaxAmountChange={(maxAmount) => setTempFilters({ ...tempFilters, maxAmount })}
+                />
 
-                <View style={styles.filterActions}>
+                <View style={styles.buttonContainer}>
                     <TouchableOpacity style={styles.clearButton} onPress={handleClearFilters}>
-                        <ThemedText style={styles.clearButtonText}>Clear</ThemedText>
+                        <ThemedText style={styles.clearButtonText}>Clear All</ThemedText>
                     </TouchableOpacity>
-
                     <TouchableOpacity style={styles.applyButton} onPress={handleApplyFilters}>
-                        <ThemedText style={styles.applyButtonText}>Apply</ThemedText>
+                        <ThemedText style={styles.applyButtonText}>Apply Filters</ThemedText>
                     </TouchableOpacity>
                 </View>
-
-            </BaseModal>
-        </View>
+            </ScrollView>
+        </BaseModal>
     );
 };
 
@@ -202,5 +191,13 @@ const styles = StyleSheet.create({
         color: '#FFF',
         fontSize: 16,
         fontWeight: '500',
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 16,
+        paddingTop: 16,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255, 255, 255, 0.1)',
     },
 });

@@ -1,24 +1,64 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { ThemedText } from '@/components/ThemedText';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
 
-interface SummaryGridProps {
+export interface SummaryGridProps {
   monthlyIncome: number;
   monthlyExpenses: number;
   showBalance: boolean;
+  isLoading?: boolean;
 }
 
 export const SummaryGrid: React.FC<SummaryGridProps> = ({
   monthlyIncome,
   monthlyExpenses,
-  showBalance
+  showBalance,
+  isLoading = false
 }) => {
+  const { currentTheme } = useTheme();
+  const isDark = currentTheme === 'dark';
+
+  if (isLoading) {
+    return (
+      <View style={styles.summaryGrid}>
+        <View style={[
+          styles.summaryItem, 
+          styles.loadingItem,
+          { 
+            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'
+          }
+        ]}>
+          <ActivityIndicator size="small" color={Colors[isDark ? 'dark' : 'light'].tint} />
+        </View>
+        <View style={[
+          styles.summaryItem, 
+          styles.loadingItem,
+          { 
+            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'
+          }
+        ]}>
+          <ActivityIndicator size="small" color={isDark ? "#FF5252" : "#E53935"} />
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.summaryGrid}>
-      <View style={styles.summaryItem}>
-        <View style={[styles.iconContainer, styles.incomeIcon]}>
-          <FontAwesome name="arrow-up" size={20} color="#4CAF50" />
+      <View style={[
+        styles.summaryItem,
+        { 
+          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'
+        }
+      ]}>
+        <View style={[
+          styles.iconContainer, 
+          { backgroundColor: isDark ? 'rgba(76, 175, 80, 0.15)' : 'rgba(76, 175, 80, 0.1)' }
+        ]}>
+          <FontAwesome name="arrow-up" size={20} color={Colors[isDark ? 'dark' : 'light'].tint} />
         </View>
         <View>
           <ThemedText style={styles.summaryLabel}>Income</ThemedText>
@@ -27,9 +67,17 @@ export const SummaryGrid: React.FC<SummaryGridProps> = ({
           </ThemedText>
         </View>
       </View>
-      <View style={styles.summaryItem}>
-        <View style={[styles.iconContainer, styles.expenseIcon]}>
-          <FontAwesome name="arrow-down" size={20} color="#FF5252" />
+      <View style={[
+        styles.summaryItem,
+        { 
+          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'
+        }
+      ]}>
+        <View style={[
+          styles.iconContainer, 
+          { backgroundColor: isDark ? 'rgba(255, 82, 82, 0.15)' : 'rgba(255, 82, 82, 0.1)' }
+        ]}>
+          <FontAwesome name="arrow-down" size={20} color={isDark ? "#FF5252" : "#E53935"} />
         </View>
         <View>
           <ThemedText style={styles.summaryLabel}>Expenses</ThemedText>
@@ -51,10 +99,13 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     padding: 16,
     borderRadius: 20,
     gap: 12,
+  },
+  loadingItem: {
+    justifyContent: 'center',
+    minHeight: 72,
   },
   iconContainer: {
     width: 40,
@@ -63,20 +114,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  incomeIcon: {
-    backgroundColor: 'rgba(76, 175, 80, 0.15)',
-  },
-  expenseIcon: {
-    backgroundColor: 'rgba(255, 82, 82, 0.15)',
-  },
   summaryLabel: {
     fontSize: 14,
-    color: '#CCCCCC',
+    opacity: 0.7,
     marginBottom: 4,
   },
   summaryAmount: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#FFFFFF',
   },
 });

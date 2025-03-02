@@ -26,6 +26,7 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
+    color: '#FFFFFF',
   },
   inputContainer: {
     marginBottom: 20,
@@ -34,6 +35,7 @@ export const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 8,
     color: '#CCC',
+    fontWeight: '500',
   },
   input: {
     backgroundColor: '#2C2C2C',
@@ -41,6 +43,8 @@ export const styles = StyleSheet.create({
     padding: 15,
     color: '#FFF',
     fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#444',
   },
   inputError: {
     borderWidth: 1,
@@ -58,6 +62,8 @@ export const styles = StyleSheet.create({
   suggestionsContainer: {
     marginTop: 10,
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   suggestionChip: {
     backgroundColor: '#3A3A3A',
@@ -144,6 +150,14 @@ export const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   buttonDisabled: {
     backgroundColor: '#2C5F2E',
@@ -155,3 +169,5 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+
+export default styles;

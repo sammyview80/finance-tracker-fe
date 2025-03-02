@@ -1,27 +1,83 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { router } from 'expo-router';
+import { StyleSheet, View, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import Toast from 'react-native-toast-message';
+
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { FontAwesome } from '@expo/vector-icons';
 import { useOnboarding } from '@/hooks/useOnboarding';
+import { useForm, Controller } from 'react-hook-form';
+import { useLogin, useRegister } from '@/services/auth/mutation';
+import { IAuthResponse } from '@/services/auth/interface';
+import { IAPIResponse } from '@/services/interface';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useHandleResponse } from '@/hooks/useHandleResponse';
+
+// Define Zod schemas for validation
+const loginSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  name: z.string().optional(),
+});
+
+const registerSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
+
+type FormData = z.infer<typeof loginSchema>;
 
 export default function AuthScreen() {
   const { completeOnboarding } = useOnboarding();
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const { mutate: login, isPending: isLogging } = useLogin();
+  const { mutate: register, isPending: isRegistering } = useRegister();
 
-  const handleSubmit = async () => {
-    // TODO: Implement actual authentication
-    // Mark onboarding as complete and navigate to main app
-    await completeOnboarding();
-    router.replace('/(tabs)');
+  // Set up form with react-hook-form and zod validation
+  const { control, handleSubmit, formState: { errors }, reset } = useForm<FormData>({
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+    },
+    resolver: zodResolver(isLogin ? loginSchema : registerSchema),
+  });
+
+  // Reset validation when switching between login and register
+  const toggleAuthMode = () => {
+    setIsLogin(!isLogin);
+    reset(); // Clear form errors when switching modes
+  };
+
+  const onSubmit = async (data: FormData) => {
+    // Mark onboarding as complete
+    try {
+      await completeOnboarding();
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'There was an error completing the onboarding process.',
+        position: 'bottom',
+        visibilityTime: 4000,
+      });
+      return; // Don't proceed with login/register if onboarding completion fails
+    }
+
+    // Proceed with authentication
+    if (isLogin) {
+      login(data);
+    } else {
+      register({ ...data, name: data.name! });
+    }
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
@@ -30,66 +86,123 @@ export default function AuthScreen() {
           <View style={styles.iconContainer}>
             <FontAwesome name="user" size={64} color="#4CAF50" />
           </View>
-          
+
           <ThemedText style={styles.title}>
             {isLogin ? 'Welcome Back' : 'Create Account'}
           </ThemedText>
+
           <ThemedText style={styles.subtitle}>
-            {isLogin 
+            {isLogin
               ? 'Sign in to access your financial dashboard'
               : 'Join us to start tracking your finances'}
           </ThemedText>
 
           {!isLogin && (
             <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Full Name"
-                placeholderTextColor="#666666"
-                value={name}
-                onChangeText={setName}
+              <Controller
+                control={control}
+                name="name"
+                rules={{
+                  required: !isLogin ? 'Name is required' : false
+                }}
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <TextInput
+                    style={[styles.input, errors.name && styles.inputError]}
+                    placeholder="Full Name"
+                    placeholderTextColor="#666666"
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    editable={!isLogging || !isRegistering}
+                  />
+                )}
               />
+              {errors.name && (
+                <ThemedText style={styles.errorText}>{errors.name.message}</ThemedText>
+              )}
             </View>
           )}
-          
+
           <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              placeholderTextColor="#666666"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
+            <Controller
+              control={control}
+              name="email"
+              rules={{
+                required: 'Email is required',
+                pattern: {
+                  value: /^\S+@\S+$/i,
+                  message: 'Invalid email address'
+                }
+              }}
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextInput
+                  style={[styles.input, errors.email && styles.inputError]}
+                  placeholder="Email"
+                  placeholderTextColor="#666666"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  editable={!isLogging || !isRegistering}
+                />
+              )}
             />
+            {errors.email && (
+              <ThemedText style={styles.errorText}>{errors.email.message}</ThemedText>
+            )}
           </View>
 
           <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor="#666666"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
+            <Controller
+              control={control}
+              name="password"
+              rules={{
+                required: 'Password is required',
+                minLength: {
+                  value: 6,
+                  message: 'Password must be at least 6 characters'
+                }
+              }}
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextInput
+                  style={[styles.input, errors.password && styles.inputError]}
+                  placeholder="Password"
+                  placeholderTextColor="#666666"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  secureTextEntry
+                  editable={!isLogging || !isRegistering}
+                />
+              )}
             />
+            {errors.password && (
+              <ThemedText style={styles.errorText}>{errors.password.message}</ThemedText>
+            )}
           </View>
 
-          <TouchableOpacity 
-            style={styles.button}
-            onPress={handleSubmit}
+          <TouchableOpacity
+            style={[styles.button, isLogging || isRegistering ? styles.buttonDisabled : null]}
+            onPress={handleSubmit(onSubmit)}
+            disabled={isLogging || isRegistering}
           >
-            <ThemedText style={styles.buttonText}>
-              {isLogin ? 'Sign In' : 'Create Account'}
-            </ThemedText>
+            {isLogging || isRegistering ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <ThemedText style={styles.buttonText}>
+                {isLogin ? 'Sign In' : 'Create Account'}
+              </ThemedText>
+            )}
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.switchButton}
-            onPress={() => setIsLogin(!isLogin)}
+            onPress={toggleAuthMode}
+            disabled={isLogging || isRegistering}
           >
             <ThemedText style={styles.switchButtonText}>
-              {isLogin 
+              {isLogin
                 ? "Don't have an account? Sign up"
                 : 'Already have an account? Sign in'}
             </ThemedText>
@@ -161,6 +274,10 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: 16,
   },
+  buttonDisabled: {
+    backgroundColor: '#4CAF50',
+    opacity: 0.7,
+  },
   buttonText: {
     color: '#FFFFFF',
     fontSize: 18,
@@ -173,5 +290,14 @@ const styles = StyleSheet.create({
   switchButtonText: {
     color: '#4CAF50',
     fontSize: 16,
+  },
+  inputError: {
+    borderColor: '#FF5252',
+  },
+  errorText: {
+    color: '#FF5252',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 8,
   },
 });

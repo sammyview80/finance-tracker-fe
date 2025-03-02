@@ -2,7 +2,7 @@ import React from 'react';
 import { Modal, Platform, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { ThemedText } from '@/components/ThemedText';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface DynamicDatePickerProps {
   visible: boolean;
@@ -17,7 +17,8 @@ export const DynamicDatePicker: React.FC<DynamicDatePickerProps> = ({
   date,
   onDateChange,
 }) => {
-  const colorScheme = useColorScheme();
+  const { currentTheme } = useTheme();
+  const isDark = currentTheme === 'dark';
 
   if (Platform.OS === 'android') {
     if (!visible) return null;
@@ -39,8 +40,8 @@ export const DynamicDatePicker: React.FC<DynamicDatePickerProps> = ({
   return (
     <Modal visible={visible} transparent animationType="fade">
       <Pressable style={styles.overlay} onPress={onClose}>
-        <View style={styles.container}>
-          <View style={styles.header}>
+        <View style={[styles.container, { backgroundColor: isDark ? '#2C2C2C' : '#FFFFFF' }]}>
+          <View style={[styles.header, { borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' }]}>
             <TouchableOpacity onPress={onClose}>
               <ThemedText style={styles.cancelText}>Cancel</ThemedText>
             </TouchableOpacity>
@@ -62,7 +63,7 @@ export const DynamicDatePicker: React.FC<DynamicDatePickerProps> = ({
                 onDateChange(selectedDate);
               }
             }}
-            textColor={colorScheme === 'dark' ? '#FFFFFF' : '#000000'}
+            textColor={isDark ? '#FFFFFF' : '#000000'}
             accentColor="#3700B3"
             style={styles.picker}
           />

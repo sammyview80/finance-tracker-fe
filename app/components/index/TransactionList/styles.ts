@@ -61,3 +61,5 @@ export const transactionSharedStyles = StyleSheet.create({
     marginVertical: 12,
   },
 });
+
+export default transactionSharedStyles;

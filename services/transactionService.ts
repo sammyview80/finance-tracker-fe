@@ -1,4 +1,6 @@
-import { FilterOptions } from "@/app/components/index/TransactionList/TransactionFilter";
+import { apiClient } from './apiClient';
+import { IAPIResponse } from './interface';
+import { Transaction, PaginationParams, FilterOptions } from '../types/transaction';
 
 // Temporary mock data for transactions
 const mockTransactions = [
@@ -84,86 +86,80 @@ const mockTransactions = [
   },
 ];
 
-export interface Transaction {
-  id: string;
-  date: string;
-  amount: number;
-  category: string;
-  description: string;
-  type: 'income' | 'expense';
+export interface TransactionResponse {
+  data: Transaction[];
+  pagination: PaginationParams;
 }
 
-/**
- * Mock API service for transactions that applies filters
- */
 export const transactionService = {
-  /**
-   * Get transactions with applied filters
-   */
-  getTransactions: async (filters: FilterOptions = {}): Promise<Transaction[]> => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+  getTransactions: async (
+    filters?: FilterOptions,
+    page: number = 1,
+    pageSize: number = 10
+  ): Promise<IAPIResponse<TransactionResponse>> => {
+    // Build query parameters
+    const params = new URLSearchParams();
     
-    // Clone the transactions to avoid modifying the original data
-    let filteredTransactions = [...mockTransactions];
+    // Pagination params
+    params.append('page', page.toString());
+    params.append('pageSize', pageSize.toString());
     
-    // Apply type filter
-    if (filters.type && filters.type !== 'all') {
-      filteredTransactions = filteredTransactions.filter(
-        transaction => transaction.type === filters.type
-      );
-    }
-    
-    // Apply date range filter
-    if (filters.fromDate) {
-      const fromDate = new Date(filters.fromDate);
-      filteredTransactions = filteredTransactions.filter(
-        transaction => new Date(transaction.date) >= fromDate
-      );
-    }
-    
-    if (filters.toDate) {
-      const toDate = new Date(filters.toDate);
-      toDate.setHours(23, 59, 59, 999); // End of the day
-      filteredTransactions = filteredTransactions.filter(
-        transaction => new Date(transaction.date) <= toDate
-      );
-    }
-    
-    // Apply amount range filter
-    if (filters.minAmount && filters.minAmount.trim() !== '') {
-      const minAmount = parseFloat(filters.minAmount);
-      if (!isNaN(minAmount)) {
-        filteredTransactions = filteredTransactions.filter(
-          transaction => transaction.amount >= minAmount
-        );
+    // Filter params
+    if (filters) {
+      if (filters.type && filters.type !== 'all') {
+        params.append('type', filters.type);
+      }
+      
+      if (filters.sortBy) {
+        params.append('sortBy', filters.sortBy);
+      }
+      
+      if (filters.sortOrder) {
+        params.append('sortOrder', filters.sortOrder);
+      }
+      
+      if (filters.fromDate) {
+        // Convert Date object to string in YYYY-MM-DD format
+        params.append('fromDate', filters.fromDate.toISOString().split('T')[0]);
+      }
+      
+      if (filters.toDate) {
+        // Convert Date object to string in YYYY-MM-DD format
+        params.append('toDate', filters.toDate.toISOString().split('T')[0]);
+      }
+      
+      if (filters.minAmount) {
+        params.append('minAmount', filters.minAmount);
+      }
+      
+      if (filters.maxAmount) {
+        params.append('maxAmount', filters.maxAmount);
+      }
+      
+      if (filters.category) {
+        params.append('category', filters.category);
       }
     }
     
-    if (filters.maxAmount && filters.maxAmount.trim() !== '') {
-      const maxAmount = parseFloat(filters.maxAmount);
-      if (!isNaN(maxAmount)) {
-        filteredTransactions = filteredTransactions.filter(
-          transaction => transaction.amount <= maxAmount
-        );
-      }
-    }
+    const queryString = params.toString();
+    const url = queryString ? `/transactions?${queryString}` : '/transactions';
     
-    // Apply sorting
-    const sortBy = filters.sortBy || 'date';
-    const sortOrder = filters.sortOrder || 'desc';
-    
-    filteredTransactions.sort((a, b) => {
-      if (sortBy === 'date') {
-        const dateA = new Date(a.date).getTime();
-        const dateB = new Date(b.date).getTime();
-        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
-      } else if (sortBy === 'amount') {
-        return sortOrder === 'asc' ? a.amount - b.amount : b.amount - a.amount;
-      }
-      return 0;
-    });
-    
-    return filteredTransactions;
+    return await apiClient.get<TransactionResponse>(url);
+  },
+
+  getTransaction: async (id: string): Promise<IAPIResponse<Transaction>> => {
+    return await apiClient.get<Transaction>(`/transactions/${id}`);
+  },
+
+  createTransaction: async (data: Partial<Transaction>): Promise<IAPIResponse<Transaction>> => {
+    return await apiClient.post<Transaction>('/transactions', data);
+  },
+
+  updateTransaction: async (id: string, data: Partial<Transaction>): Promise<IAPIResponse<Transaction>> => {
+    return await apiClient.put<Transaction>(`/transactions/${id}`, data);
+  },
+
+  deleteTransaction: async (id: string): Promise<IAPIResponse<void>> => {
+    return await apiClient.delete<void>(`/transactions/${id}`);
   }
 };

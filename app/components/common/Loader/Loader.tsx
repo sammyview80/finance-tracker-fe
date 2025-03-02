@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
 import { StyleSheet, View, Animated, Easing } from 'react-native';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 
 export default function Loader() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { currentTheme } = useTheme();
+  const isDark = currentTheme === 'dark';
   const rotateValue = new Animated.Value(0);
   const opacityValue = new Animated.Value(0.4);
 

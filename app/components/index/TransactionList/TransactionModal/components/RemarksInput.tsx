@@ -22,3 +22,5 @@ export const RemarksInput: React.FC<RemarksInputProps> = ({
     />
   );
 };
+
+export default RemarksInput;

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { StyleSheet, Animated, ViewStyle, Dimensions, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface SkeletonViewProps {
   style?: ViewStyle;
@@ -12,8 +12,8 @@ const GRADIENT_WIDTH = width;
 const ANIMATION_DURATION = 1500;
 
 export const SkeletonView: React.FC<SkeletonViewProps> = ({ style }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { currentTheme } = useTheme();
+  const isDark = currentTheme === 'dark';
   const animatedValue = new Animated.Value(-GRADIENT_WIDTH);
 
   useEffect(() => {
